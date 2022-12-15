@@ -31,7 +31,7 @@ namespace SoftaweEngineering.Data.Migrations
                     NormalizedUserName = table.Column<string>(maxLength: 256, nullable: true),
                     Email = table.Column<string>(maxLength: 256, nullable: true),
                     NormalizedEmail = table.Column<string>(maxLength: 256, nullable: true),
-                    EmailConfirmed = table.Column<bool>(nullable: false),
+                    //EmailConfirmed = table.Column<bool>(nullable: false),
                     PasswordHash = table.Column<string>(nullable: true),
                     SecurityStamp = table.Column<string>(nullable: true),
                     ConcurrencyStamp = table.Column<string>(nullable: true),

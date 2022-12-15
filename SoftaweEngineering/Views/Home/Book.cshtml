@@ -1,0 +1,16 @@
+﻿@model SoftaweEngineering.Models.Book
+@{
+    ViewData["Title"] = "Home Page"; 
+}
+    <style>
+        @Model.Styles[0];
+        div{
+            
+        }
+     </style>
+     <style>
+        @Model.Styles[1];
+     </style>
+<div class="cs-container">
+    @Html.Raw(System.Web.HttpUtility.HtmlDecode(@Model.Body));
+</div>
