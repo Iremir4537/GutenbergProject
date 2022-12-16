@@ -1,4 +1,8 @@
-﻿<!DOCTYPE html>
+﻿@{
+   
+
+}
+<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="utf-8" />
@@ -28,13 +32,20 @@
                     <span class="navbar-toggler-icon"></span>
                 </button>
                 <div class="navbar-collapse collapse d-sm-inline-flex justify-content-between">
-                    <ul class="navbar-nav flex-grow-1">
-                        <li class="nav-item">
-                            <a class="nav-link text-dark" asp-area="" asp-controller="Home" asp-action="Index">Home</a>
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-link text-dark" asp-area="" asp-controller="Home" asp-action="Privacy">Privacy</a>
-                        </li>
+                    <ul class="navbar-nav" style="align-items:center;margin-left:100px;gap:50px;justify-content:center" >                       
+                        <form method="get" action="/books/search"  class="input-group" style="width:450px;align-items:center;justify-content:center">    
+                                <label style="width:150px">Search by Name:</label>
+                                @Html.TextBox("query","",new {@class = "form-control"})
+                                @Html.TextBox("page","1", new {@class = "d-none"})
+                                <input type="Submit" class="btn btn-primary" style="border-radius:10px"/>
+                        </form>
+                        
+                        <form class="input-group" method="get" action="/books/topic" style="width:450px;align-items:center;justify-content:center">
+                                <label style="width:150px">Search by Topic:</label>
+                                @Html.TextBox("topic","",new {@class = "form-control"})
+                                @Html.TextBox("page","1", new {@class = "d-none"})
+                                <input type="Submit" class="btn btn-primary" style="border-radius:10px"/>
+                        </form>
                     </ul>
                     <partial name="_LoginPartial" />
                 </div>

@@ -1,0 +1,35 @@
+﻿@model List<BookCard>
+@*
+    For more information on enabling MVC for empty projects, visit https://go.microsoft.com/fwlink/?LinkID=397860
+*@
+@{
+    string next = @Context.Request.Path.Value.ToString() + "?topic=" + @Context.Request.Query["topic"] + "&page=" + (int.Parse(@Context.Request.Query["page"]) +1).ToString()    ;
+}
+<style>
+    .card-container {
+        display: grid;
+        grid-template-columns: 25% 25% 25% 25%;
+        margin-top: 100px;
+        gap: 50px;
+    }
+</style>
+@if (@Model.Count > 0)
+{
+    <div class="card-container">
+        @foreach (BookCard bk in @Model)
+        {
+            <a href="https://localhost:7184/book/@Html.DisplayFor(m=> bk.Id)">
+                <div class="card card-book" style="width: 18rem;">
+                    <img class="card-img-top" src="@Html.DisplayFor(m => bk.ImageUrl)" alt="Card image cap">
+                    <div class="card-body">
+                        <h5 class="card-title">@Html.DisplayFor(m => bk.Title)</h5>
+                    </div>
+                </div>
+            </a>
+        }
+    </div>
+    @if (@Model[0].Next)
+    {
+        <a  href='@next' class="btn">Next Page</a>
+    }
+}
