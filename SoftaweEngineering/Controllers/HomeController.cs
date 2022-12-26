@@ -5,31 +5,65 @@ using System.Xml;
 using System.Net.Http;
 using System.Net;
 using HtmlAgilityPack;
-using SoftaweEngineering.Models;
 using System.Web;
 using System.Text.RegularExpressions;
 using System.Text;
 using Nancy.Json;
 using System.Text.Json;
 using System.Text.Json.Serialization;
+using SoftaweEngineering.Data;
+using Microsoft.EntityFrameworkCore;
 
 namespace SoftaweEngineering.Controllers
 {
     public class HomeController : Controller
     {
-
+        private readonly ApplicationDbContext _context;
 
         private readonly ILogger<HomeController> _logger;
         static readonly HttpClient client = new HttpClient();
 
-        public HomeController(ILogger<HomeController> logger)
+        public HomeController(ILogger<HomeController> logger, ApplicationDbContext context)
         {
             _logger = logger;
+            _context = context;
         }
 
         public async Task<IActionResult> Index()
         {
-            return View();
+            String[] idStr = {"2641","145","37106","16389","67979", "100", "2701", "6761", "394", "2160", "4085", "6593", "5197", "1259", "46", "84", "1342", "25344", "11", "174" };
+            List<BookCard> bc = new List<BookCard>();
+            foreach (var bd in idStr)
+            {
+
+
+                string url = "https://gutendex.com/books/?ids=" + bd;
+                HttpResponseMessage res = await client.GetAsync(url);
+                JavaScriptSerializer javaScriptSerializer = new JavaScriptSerializer();
+                BookSearch search = javaScriptSerializer.Deserialize<BookSearch>(res.Content.ReadAsStringAsync().Result);
+
+                string imgUrl = "https://www.gutenberg.org/cache/epub/" + bd+ "/images/cover.jpg";
+                HttpResponseMessage res1 = await client.GetAsync(imgUrl);
+                if (res1.StatusCode.ToString() == "NotFound")
+                {
+                    imgUrl = "https://www.gutenberg.org/cache/epub/" + bd+ "/" + bd+ "-cover.png";
+                }
+                HttpResponseMessage res2 = await client.GetAsync(imgUrl);
+                if (res2.StatusCode.ToString() == "NotFound")
+                {
+                    imgUrl = "https://www.gutenberg.org/cache/epub/" + bd+ "/pg" + bd+ ".cover.medium.jpg";
+                }
+                BookCard bc1 = new BookCard
+                {
+                    Id = int.Parse(bd),
+                    Next = false,
+                    Title = search.results[0].title,
+                    ImageUrl = imgUrl,
+                };
+                bc.Add(bc1);
+            }
+
+            return View(bc);
         }
         [HttpGet]
         public IActionResult NameGet()
@@ -74,17 +108,29 @@ namespace SoftaweEngineering.Controllers
                 Title = "title",
                 Styles = list,
                 Body = doc.DocumentNode.SelectSingleNode("//body").InnerHtml.Trim(),
+                Page = 0,
             };
             return book;
         }
 
         [Route("book/{id:int}")]
-        public IActionResult Book(int id)
+        public async Task<IActionResult> Book(int id)
         {
             Book book = GetBook("https://www.gutenberg.org/cache/epub/"+id+"/", "pg"+id+ "-images.html",id);
+            string email = Request.Cookies["SESSION"];
+            if(email != null)
+            {
+            var user = await _context.User.FirstOrDefaultAsync(m => m.Email == email);
+            var library = await _context.Library.FirstOrDefaultAsync(m => m.UserId == user.Id);
+            var lb = await _context.Library_Book.FirstOrDefaultAsync(m => m.BookId == id && m.LibraryId == library.Id);
+                if(lb != null)
+                {
+                book.Page = lb.Page;
+                }
+            }
+
             return View(book);
         }
-
 
         [Route("books/search/")]
         public async Task<IActionResult> BookSearch(string query, string page = "1")
@@ -98,15 +144,19 @@ namespace SoftaweEngineering.Controllers
             List<BookCard> bc = new List<BookCard>();
             foreach (BookData bd in search.results)
             {
-                string imgUrl = "https://www.gutenberg.org/cache/epub/" + bd.id + "/"+ bd.id +"-cover.png";
+                string imgUrl = "https://www.gutenberg.org/cache/epub/" + bd.id + "/images/cover.jpg";
                 HttpResponseMessage res1 = await client.GetAsync(imgUrl);
                 if (res1.StatusCode.ToString() == "NotFound")
                 {
-                    imgUrl = "https://www.gutenberg.org/cache/epub/" + bd.id + "/images/cover.jpg";
+                    imgUrl = "https://www.gutenberg.org/cache/epub/" + bd.id + "/" + bd.id + "-cover.png";
                 }
-                
+                HttpResponseMessage res2 = await client.GetAsync(imgUrl);
+                if (res2.StatusCode.ToString() == "NotFound")
+                {
+                    imgUrl = "https://www.gutenberg.org/cache/epub/" + bd.id + "/pg" + bd.id + ".cover.medium.jpg";
+                }
                 BookCard bc1 = new BookCard
-                {   
+                {
                     Id = bd.id,
                     Next = search.next != null,
                     Title = bd.title,
@@ -115,6 +165,98 @@ namespace SoftaweEngineering.Controllers
                 bc.Add(bc1);
 
             }
+            return View(bc);
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        [Route("/library/[action]")]
+        public async Task<IActionResult> AddToLibrary(string Id)
+        {
+            string email = Request.Cookies["SESSION"];
+            var user = await _context.User.FirstOrDefaultAsync(m => m.Email == email);
+            var library = await _context.Library.FirstOrDefaultAsync(m => m.UserId == user.Id);
+            Library_Book lb = new Library_Book()
+            {
+                BookId = int.Parse(Id),
+                LibraryId = library.Id,
+                Page = 0,
+            };
+            _context.Add(lb);
+            await _context.SaveChangesAsync();
+            return RedirectToAction("Library");
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        [Route("/library/[action]")]
+        public async Task<IActionResult> RemoveFromLibrary(string Id)
+        {
+            string email = Request.Cookies["SESSION"];
+            var user = await _context.User.FirstOrDefaultAsync(m => m.Email == email);
+            var library = await _context.Library.FirstOrDefaultAsync(m => m.UserId == user.Id);
+            var lb = await _context.Library_Book.FirstOrDefaultAsync(m => m.BookId == int.Parse(Id));
+            _context.Remove(lb);
+            await _context.SaveChangesAsync();
+            return RedirectToAction("Library");
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> AddPage(string Id, string BookId)
+        {            
+            string email = Request.Cookies["SESSION"];
+            var user = await _context.User.FirstOrDefaultAsync(m => m.Email == email);
+            var library = await _context.Library.FirstOrDefaultAsync(m => m.UserId == user.Id);
+            var lb = await _context.Library_Book.FirstOrDefaultAsync(m => m.BookId == int.Parse(BookId) && m.LibraryId == library.Id);
+            if(lb != null)
+            {
+                lb.Page = int.Parse(Id);
+                _context.Update(lb);
+                await _context.SaveChangesAsync();
+            }
+            return RedirectToAction("Library");
+        }
+
+        [Route("/library")]
+        public async Task<IActionResult> Library()
+        {
+            string email = Request.Cookies["SESSION"];
+            var user = await _context.User.FirstOrDefaultAsync(m => m.Email == email);
+            var library = await _context.Library.FirstOrDefaultAsync(m => m.UserId == user.Id);
+            var lb = _context.Library_Book.Where(x => x.LibraryId == library.Id);
+
+            List<BookCard> bc = new List<BookCard>();
+            foreach (var bd in lb)
+            {
+
+
+                string url = "https://gutendex.com/books/?ids=" +bd.BookId;
+                HttpResponseMessage res = await client.GetAsync(url);
+                JavaScriptSerializer javaScriptSerializer = new JavaScriptSerializer();
+                BookSearch search = javaScriptSerializer.Deserialize<BookSearch>(res.Content.ReadAsStringAsync().Result);
+
+                string imgUrl = "https://www.gutenberg.org/cache/epub/" + bd.BookId + "/images/cover.jpg";
+                HttpResponseMessage res1 = await client.GetAsync(imgUrl);
+                if (res1.StatusCode.ToString() == "NotFound")
+                {
+                    imgUrl = "https://www.gutenberg.org/cache/epub/" + bd.BookId + "/" + bd.BookId + "-cover.png";
+                }
+                HttpResponseMessage res2 = await client.GetAsync(imgUrl);
+                if (res2.StatusCode.ToString() == "NotFound")
+                {
+                    imgUrl = "https://www.gutenberg.org/cache/epub/" + bd.BookId + "/pg" + bd.BookId + ".cover.medium.jpg";
+                }
+                BookCard bc1 = new BookCard
+                {
+                    Id = bd.BookId,
+                    Next = false,
+                    Title = search.results[0].title,
+                    ImageUrl = imgUrl,
+                };
+                bc.Add(bc1);
+            }
+
             return View(bc);
         }
 

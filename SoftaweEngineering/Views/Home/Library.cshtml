@@ -1,10 +1,7 @@
-﻿
-@model List<BookCard>
+﻿@model List<BookCard>
 @*
     For more information on enabling MVC for empty projects, visit https://go.microsoft.com/fwlink/?LinkID=397860
 *@
-@{
-}
 <style>
     .card-container {
         display: grid;
@@ -14,7 +11,7 @@
     }
 </style>
 @if(@Model.Count > 0){
-    <h1 style="margin-top:100px">Popular Books</h1>
+<h1 style="margin-top:100px">Library</h1>
 <div class="card-container">
     @foreach (BookCard bk in @Model)
     {
@@ -25,15 +22,11 @@
                 <div class="card-body">
                     <h5 class="card-title">@Html.DisplayFor(m => bk.Title)</h5>
                 </div>
-                    @if (@Context.Request.Cookies["SESSION"] != null)
-                    {
-                    @using (Html.BeginForm("AddToLibrary", "Home", FormMethod.Post))
+                @using (Html.BeginForm("RemoveFromLibrary", "Home", FormMethod.Post))
                         {
                             @Html.TextBox("Id",@bk.Id,new {@class = "d-none"});
-                            <button style="margin-left:80px;margin-bottom:20px" type="submit" class="btn btn-primary">Add To Library</button>
-                        }    
-                    }
-                    
+                            <button style="margin-left:50px;margin-bottom:20px" type="submit" class="btn btn-primary">Remove From Library</button>
+                        }
             </div>
         </a>
 

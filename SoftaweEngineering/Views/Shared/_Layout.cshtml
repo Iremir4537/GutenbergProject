@@ -1,5 +1,6 @@
-﻿@{
-   
+﻿@using Nancy
+@{
+    
 
 }
 <!DOCTYPE html>
@@ -12,9 +13,22 @@
         @ViewData["Style"]
         header{
             position: absolute;
-            width: 100vw;
+            width: 99vw;
             left: 0;
             top: 0;
+        }
+        nav{
+        padding:0 20px;
+        }
+        .navbar-links{
+            display:flex;
+            align-items:center;
+            justify-content:center;
+        }
+        .navbar-links a{
+            padding-left:20px;
+            text-decoration:none;
+            color:rgba(0,0,0,.9)
         }
     </style>
     @RenderSection("Styles",false)
@@ -47,7 +61,18 @@
                                 <input type="Submit" class="btn btn-primary" style="border-radius:10px"/>
                         </form>
                     </ul>
-                    <partial name="_LoginPartial" />
+                    
+                    <div class="navbar-links">
+                        @if(Context.Request.Cookies["SESSION"] != null){
+                            <a asp-area="" asp-controller="Home" asp-action="Library">MyLibrary</a>
+                            <a asp-area="" asp-controller="Users" asp-action="Logout">Logout</a>
+                        }
+                        @if(Context.Request.Cookies["SESSION"] == null){
+                            <a asp-area="" asp-controller="Users" asp-action="Login">Login</a>
+                        <a asp-area="" asp-controller="Users" asp-action="Register">Register</a>
+                        }
+                    </div>
+
                 </div>
             </div>
         </nav>

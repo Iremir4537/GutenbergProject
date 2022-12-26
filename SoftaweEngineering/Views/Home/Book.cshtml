@@ -1,16 +1,45 @@
 ﻿@model SoftaweEngineering.Models.Book
 @{
-    ViewData["Title"] = "Home Page"; 
+    ViewData["Title"] = "Home Page";
+    int x = 0;
+
 }
+<script type="module">
+    window.scrollTo(0, @Model.Page);
+        const val = document.getElementById("Id")
+        val.setAttribute("value",0)
+        window.addEventListener("scroll", () => {
+                val.setAttribute("value",window.scrollY)
+        })
+</script>
     <style>
-        @Model.Styles[0];
-        div{
-            
+        @Model.Styles[0]
+        form{
+            position:sticky !important;            
+            left:-200px;
+            bottom:20px;
+            width:500px;
         }
      </style>
      <style>
-        @Model.Styles[1];
+        @Model.Styles[1]
+        .closeButton{
+            position:sticky !important;            
+            left:-200px;
+            bottom:20px;
+            width:150px;
+            height:50px;
+            transform:translate(-380px,0);
+            background-color:#111 !important;
+            color:white !important;
+        }
      </style>
 <div class="cs-container">
     @Html.Raw(System.Web.HttpUtility.HtmlDecode(@Model.Body));
 </div>
+@using (Html.BeginForm("AddPage", "Home", FormMethod.Post))
+    {
+        @Html.TextBox("Id",0,new {@class = "d-none"});
+        @Html.TextBox("BookId",@Model.Id,new {@class = "d-none"});
+        <button type="submit" class="closeButton ">Stop Reading</button>
+    }
